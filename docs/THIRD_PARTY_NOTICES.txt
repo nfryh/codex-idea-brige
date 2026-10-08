@@ -1,0 +1,44 @@
+# 第三方运行依赖的来源、许可证与随包许可文本索引。
+
+项目自有代码使用 MIT License；以下依赖分别保留其上游许可证。
+许可全文位于 docs/licenses/，安装包中为 licenses/，Java 归档中为
+META-INF/licenses/。文件版权声明按上游文本原样保留。
+
+以下版本来自插件压缩包与 Gradle 依赖锁。IntelliJ 平台和
+JetBrains Runtime 是构建、验证或运行依赖，未打入本插件压缩包。
+
+gson 2.13.2
+来源：https://github.com/google/gson
+许可证：Apache License 2.0
+许可证地址：https://www.apache.org/licenses/LICENSE-2.0.txt
+随包文本：Apache-2.0.txt
+
+tomlj 1.1.1
+来源：https://github.com/tomlj/tomlj
+许可证：Apache License 2.0
+许可证地址：https://www.apache.org/licenses/LICENSE-2.0.txt
+随包文本：Apache-2.0.txt
+
+antlr4-runtime 4.11.1
+来源：https://github.com/antlr/antlr4
+许可证：BSD 3-Clause
+许可证地址：https://github.com/antlr/antlr4/blob/4.11.1/LICENSE.txt
+随包文本：antlr4-runtime-LICENSE.txt
+
+checker-qual 3.21.2
+来源：https://github.com/typetools/checker-framework
+许可证：MIT License
+许可证地址：https://github.com/typetools/checker-framework/blob/checker-framework-3.21.2/LICENSE.txt
+随包文本：checker-qual-LICENSE.txt，取自实际 checker-qual 归档
+
+error_prone_annotations 2.41.0
+来源：https://github.com/google/error-prone
+许可证：Apache License 2.0
+许可证地址：https://www.apache.org/licenses/LICENSE-2.0.txt
+随包文本：Apache-2.0.txt
+
+Java 21 独立桥接归档内部含桥接协议及其运行依赖，采用各上游原许可证。
+IntelliJ 平台、JetBrains Runtime、Gradle、测试库和源码格式工具仅用于
+构建、运行环境或开发验证，不作为本插件的第三方运行库打包。
+依赖版本变化时应同步更新本索引与许可文件，不将历史漏洞查询结果
+当作当前依赖的安全保证。

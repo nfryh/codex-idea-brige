@@ -1,0 +1,8 @@
+# 保留启动脚本对应平台的换行格式，二进制安装包与验收截图不进行文本转换。
+* text=auto
+gradlew text eol=lf
+gradlew.bat text eol=crlf
+idea-plugin/src/main/resources/terminal/codex text eol=lf
+*.zip binary
+*.jar binary
+*.png binary

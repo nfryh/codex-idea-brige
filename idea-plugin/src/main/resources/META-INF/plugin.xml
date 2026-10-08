@@ -1,0 +1,38 @@
+<!-- 用户手动运行原生 Codex；引用动作插入草稿，不自动提交。 -->
+<idea-plugin>
+  <id>dev.local.codex.idea.companion</id>
+  <name>Codex Terminal Companion</name>
+  <vendor>Project Maintainer</vendor>
+  <description>Codex Terminal Companion adds editor references to the original Codex CLI draft. 将 IDEA 文件和选区行号引用插入原生 Codex 草稿，提交时提供冻结快照及受限编辑器工具。</description>
+  <depends>com.intellij.modules.platform</depends>
+  <depends>org.jetbrains.plugins.terminal</depends>
+  <extensions defaultExtensionNs="com.intellij">
+    <applicationConfigurable id="ICB.Settings" displayName="Codex IDEA Companion" parentId="tools" instance="dev.local.icb.ui.CompanionConfigurable"/>
+    <postStartupActivity implementation="dev.local.icb.core.CompanionStartupActivity"/>
+    <notificationGroup id="ICB" displayType="BALLOON"/>
+  </extensions>
+  <extensions defaultExtensionNs="org.jetbrains.plugins.terminal">
+    <shellExecOptionsCustomizer implementation="dev.local.icb.terminal262.CompanionShellCustomizer"/>
+  </extensions>
+  <actions>
+    <action id="ICB.AddSelection" class="dev.local.icb.ui.CompanionAction" text="发送选区引用到 Codex">
+      <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+      <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt K"/>
+      <keyboard-shortcut keymap="Mac OS X" first-keystroke="meta alt K"/>
+    </action>
+    <action id="ICB.AddCurrentFile" class="dev.local.icb.ui.CompanionAction" text="发送当前文件引用到 Codex">
+      <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+      <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt shift K"/>
+      <keyboard-shortcut keymap="Mac OS X" first-keystroke="meta alt shift K"/>
+    </action>
+    <action id="ICB.AddProjectFiles" class="dev.local.icb.ui.CompanionAction" text="添加所选文件到 Codex"><add-to-group group-id="ProjectViewPopupMenu" anchor="last"/></action>
+    <action id="ICB.FindFileAndAdd" class="dev.local.icb.ui.CompanionAction" text="搜索文件并添加到 Codex"/>
+    <action id="ICB.ShowContextQueue" class="dev.local.icb.ui.CompanionAction" text="查看 Codex 引用">
+      <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt shift Q"/>
+      <keyboard-shortcut keymap="Mac OS X" first-keystroke="meta alt Q"/>
+    </action>
+    <action id="ICB.SelectSession" class="dev.local.icb.ui.CompanionAction" text="选择 Codex 目标会话"/>
+    <action id="ICB.ShowDiff" class="dev.local.icb.ui.CompanionAction" text="查看本轮已记录文件差异"/>
+    <action id="ICB.ConnectionDiagnostics" class="dev.local.icb.ui.CompanionAction" text="Codex 联动诊断"/>
+  </actions>
+</idea-plugin>

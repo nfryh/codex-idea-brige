@@ -1,0 +1,153 @@
+{
+  "$comment": "冻结引用的结构合同；真实路径、UTF-16 范围关系及 UTF-8 字节容量由运行时代码再次验证。",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ContextAttachment",
+  "type": "object",
+  "properties": {
+    "attachmentId": {
+      "type": "string"
+    },
+    "projectId": {
+      "type": "string"
+    },
+    "sessionId": {
+      "type": "string"
+    },
+    "rootId": {
+      "type": "string"
+    },
+    "relativePath": {
+      "type": "string"
+    },
+    "contentSha256": {
+      "type": "string"
+    },
+    "capturedAt": {
+      "type": "string"
+    },
+    "kind": {
+      "enum": [
+        "PATH_ONLY",
+        "SELECTION_SNAPSHOT",
+        "FILE_SNAPSHOT"
+      ]
+    },
+    "unsaved": {
+      "type": "boolean"
+    },
+    "content": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "startOffset": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "endOffsetExclusive": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "startLineOneBased": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 1
+    },
+    "endLineInclusiveOneBased": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 1
+    },
+    "documentModificationStamp": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0
+    }
+  },
+  "required": [
+    "attachmentId",
+    "projectId",
+    "sessionId",
+    "rootId",
+    "relativePath",
+    "contentSha256",
+    "capturedAt",
+    "kind",
+    "unsaved",
+    "content",
+    "startOffset",
+    "endOffsetExclusive",
+    "startLineOneBased",
+    "endLineInclusiveOneBased",
+    "documentModificationStamp"
+  ],
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "PATH_ONLY"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "content": {
+            "type": "null"
+          },
+          "startOffset": {
+            "type": "null"
+          },
+          "endOffsetExclusive": {
+            "type": "null"
+          },
+          "startLineOneBased": {
+            "type": "null"
+          },
+          "endLineInclusiveOneBased": {
+            "type": "null"
+          },
+          "documentModificationStamp": {
+            "type": "null"
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "content": {
+            "type": "string"
+          },
+          "startOffset": {
+            "type": "integer"
+          },
+          "endOffsetExclusive": {
+            "type": "integer"
+          },
+          "startLineOneBased": {
+            "type": "integer"
+          },
+          "endLineInclusiveOneBased": {
+            "type": "integer"
+          },
+          "documentModificationStamp": {
+            "type": "integer"
+          }
+        }
+      }
+    }
+  ]
+}

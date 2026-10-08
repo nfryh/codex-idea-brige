@@ -1,0 +1,17 @@
+#!/bin/sh
+# 仅用于 IDEA 已启用联动的终端：保留 codex 命令、原生参数与信号传递。
+# 连接存在时使用可继承终端环境的原生运行方式；关闭联动后恢复原生默认方式。
+if [ -z "${ICB_REAL_CODEX:-}" ]; then
+    printf '%s\n' 'ICB_CLI_PATH_MISSING' >&2
+    exit 127
+fi
+
+# 保留用户现有 Node.js 优先级；命令所在目录补到末尾，支持界面启动时缺少 Homebrew 路径。
+PATH="${PATH:-}:${ICB_REAL_CODEX%/*}"
+export PATH
+
+if [ -f "${ICB_ENDPOINT_FILE:-}" ] && [ "${ICB_DIRECT_MODE_SUPPORTED:-}" = 'true' ]; then
+    exec "$ICB_REAL_CODEX" --no-daemon "$@"
+fi
+
+exec "$ICB_REAL_CODEX" "$@"

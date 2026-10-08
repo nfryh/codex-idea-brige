@@ -1,0 +1,24 @@
+# 本地开发环境、构建缓存和编译输出。
+.gradle/
+.idea/
+.intellijPlatform/
+.kotlin/
+.tools/
+**/build/
+out/
+*.iml
+.DS_Store
+
+# 安装包通过 GitHub Releases 分发，本地生成后保留。
+dist/
+
+# 运行日志不进入源码版本管理；测试和验证报告生成在各模块 build 目录。
+*.log
+
+# 个人环境配置与凭据。
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+gradle-local.properties
