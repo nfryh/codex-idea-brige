@@ -69,8 +69,7 @@ public final class BridgeClientMain {
         } catch (IOException ex) {
             if (mode.equals("submit")) {
                 System.out.print(
-                        Json.GSON.toJson(
-                                Json.object("systemMessage", "IDEA 上下文未注入，本次按普通 CLI 请求继续")));
+                        Json.GSON.toJson(Json.object("systemMessage", "IDEA 上下文未附加，本次继续使用 Codex")));
                 System.out.flush();
             }
             System.err.println("ICB_BRIDGE_UNAVAILABLE");

@@ -29,6 +29,30 @@ public class NativeTerminalRoundTripTest extends HeavyPlatformTestCase {
     /** 只输入 codex 后启动与工具连接生效；原生提交使用冻结选区而不是磁盘或后续修改。 */
     public void testPlainCodexNativeHooksDeliverFrozenUnsavedSelectionToLocalFixture()
             throws Exception {
+        // 通过真实原生终端验证正常引用交接。
+        runNativeSubmission(false, false);
+    }
+
+    /** 在项目外启动时，原生 Codex 仍把用户输入交给本地模型服务。 */
+    public void testOutsideProjectNativeHookDoesNotBlockModelRequest() throws Exception {
+        // 使用项目外工作目录复现用户截图中的路径校验失败。
+        runNativeSubmission(true, false);
+    }
+
+    /** 桥接服务在终端启动后关闭，原生 Codex 仍能提交普通问题。 */
+    public void testDisconnectedBridgeDoesNotBlockNativeModelRequest() throws Exception {
+        // 在提交前关闭实际桥接服务，保留终端中的旧连接信息。
+        runNativeSubmission(false, true);
+    }
+
+    /**
+     * 使用隔离配置和本地模型服务验证实际原生提交，不读取真实登录凭据。
+     *
+     * @param outsideProject true 表示在项目外启动 Codex，false 表示在当前测试项目启动
+     * @param disconnectBridge true 表示提交前关闭桥接服务，false 表示保持服务运行
+     */
+    private void runNativeSubmission(boolean outsideProject, boolean disconnectBridge)
+            throws Exception {
         Path cli = LocalCodexPaths.findExecutable();
         assertNotNull("本机原生验收需要已安装的 Codex", cli);
         Path root = Path.of(getProject().getBasePath());
@@ -222,7 +246,7 @@ public class NativeTerminalRoundTripTest extends HeavyPlatformTestCase {
                                     script.toString(),
                                     cli.toString(),
                                     home.toString(),
-                                    root.toString(),
+                                    outsideProject ? home.toString() : root.toString(),
                                     binding.descriptor().toString(),
                                     launcher.directory().toString())
                             .redirectErrorStream(true)
@@ -232,6 +256,31 @@ public class NativeTerminalRoundTripTest extends HeavyPlatformTestCase {
                             new OutputStreamWriter(
                                     controller.getOutputStream(), StandardCharsets.UTF_8));
             // 终端已经可以输入时先发送选区，不等待原生启动回调，也不先发一条初始化问题。
+            Process startedController = controller;
+            try (var worker = Executors.newVirtualThreadPerTaskExecutor()) {
+                var started =
+                        worker.submit(
+                                () -> {
+                                    var signals =
+                                            new BufferedReader(
+                                                    new InputStreamReader(
+                                                            startedController.getInputStream(),
+                                                            StandardCharsets.UTF_8));
+                                    String line;
+                                    while ((line = signals.readLine()) != null) {
+                                        if (Json.parse(line).has("started")) return true;
+                                    }
+                                    return false;
+                                });
+                try {
+                    assertTrue("原生终端未启动", started.get(15, TimeUnit.SECONDS));
+                } catch (TimeoutException | InterruptedException ex) {
+                    // 关闭子进程解除标准输出读取，避免超时后等待工作线程退出而卡住测试。
+                    startedController.destroyForcibly();
+                    started.cancel(true);
+                    throw ex;
+                }
+            }
             Thread.sleep(1500);
             WriteCommandAction.runWriteCommandAction(
                     getProject(), () -> document.setText(nonce + "\n"));
@@ -265,18 +314,32 @@ public class NativeTerminalRoundTripTest extends HeavyPlatformTestCase {
             // 模拟快捷发送后继续编辑，原生请求仍必须包含发送时冻结的版本。
             WriteCommandAction.runWriteCommandAction(
                     getProject(), () -> document.setText("CHANGED_AFTER_SEND\n"));
+            if (disconnectBridge) bridge.dispose();
             commands.write("{\"op\":\"submit\"}\n");
             commands.flush();
             long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(20);
             while (observed.get() == null && controller.isAlive() && System.nanoTime() < deadline)
                 Thread.sleep(20);
             assertNotNull("原生 Codex 请求未到达本地模型夹具", observed.get());
-            assertTrue(observed.get().get("frozenNonceReceived").getAsBoolean());
+            assertEquals(
+                    !outsideProject && !disconnectBridge,
+                    observed.get().get("frozenNonceReceived").getAsBoolean());
             assertFalse(observed.get().get("changedDocumentReceived").getAsBoolean());
             assertTrue(observed.get().get("existingDraftReceived").getAsBoolean());
             assertTrue(observed.get().get("fileReferenceReceived").getAsBoolean());
-            assertTrue("原生模型上下文协议连接未建立", service.mcpObserved);
             assertEquals("DISK_ONLY_FIXTURE\n", Files.readString(source));
+            if (outsideProject || disconnectBridge) {
+                assertEquals(1, service.terminalDrafts().size());
+                assertTrue(
+                        service.sessions.list().values().stream()
+                                .allMatch(session -> session.turns.isEmpty()));
+                commands.write("{\"op\":\"close\"}\n");
+                commands.flush();
+                assertTrue(controller.waitFor(5, TimeUnit.SECONDS));
+                assertEquals(0, controller.exitValue());
+                return;
+            }
+            assertTrue("原生模型上下文协议连接未建立", service.mcpObserved);
             assertTrue(
                     "必须观察到真实启动回调，不能只凭收到任意回调推断",
                     service.receivedHookEvents.contains("SessionStart"));

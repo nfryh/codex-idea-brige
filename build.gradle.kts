@@ -6,7 +6,7 @@ plugins {
 
 allprojects {
     group = "dev.local.icb"
-    version = "1.0.0-dev.6"
+    version = "1.0.0-dev.7"
 }
 
 subprojects {

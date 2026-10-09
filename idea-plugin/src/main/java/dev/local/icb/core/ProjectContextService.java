@@ -736,7 +736,7 @@ public final class ProjectContextService implements Disposable {
     public record HookResult(String output, String batchId) {}
 
     /**
-     * 2026-10-06：首次回调关联同一个认证终端的草稿，删除标记后移除快照，分派失败返回原生阻止结果。
+     * 2026-10-09：首次回调关联同一个认证终端的草稿，删除标记后移除快照；附加失败仅提示，不阻断 Codex 提交。
      *
      * @param terminalId 请求凭证绑定的终端标识
      */
@@ -832,15 +832,14 @@ public final class ProjectContextService implements Disposable {
             if (!input.has("turn_id") && event.equals("UserPromptSubmit"))
                 lastError = "ICB_PROTOCOL_MISMATCH";
             if (event.equals("UserPromptSubmit"))
+                // IDEA 上下文是附加能力；路径或引用校验失败不能阻止用户使用原生 Codex。
                 return new HookResult(
                         Json.GSON.toJson(
                                 Json.object(
-                                        "decision",
-                                        "block",
-                                        "reason",
+                                        "systemMessage",
                                         "IDEA 引用未附加（"
                                                 + lastError
-                                                + "）。请检查目标会话、联动开关、路径或引用容量；队列已保留。")),
+                                                + "）。本次继续使用 Codex，未发送的引用已保留；请检查目标会话、联动开关、路径或引用容量。")),
                         null);
             throw ex;
         }

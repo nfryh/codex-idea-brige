@@ -166,8 +166,10 @@ public class ClientTest {
         process.getOutputStream().write("{}".getBytes());
         process.getOutputStream().close();
         assertTrue(process.waitFor(3, TimeUnit.SECONDS));
+        assertEquals(0, process.exitValue());
         String output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-        assertTrue(Json.required(Json.parse(output), "systemMessage").contains("未注入"));
+        assertTrue(Json.required(Json.parse(output), "systemMessage").contains("继续使用 Codex"));
+        assertFalse(Json.parse(output).has("decision"));
     }
 
     @Test

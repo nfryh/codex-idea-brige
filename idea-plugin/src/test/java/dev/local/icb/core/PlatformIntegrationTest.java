@@ -554,8 +554,8 @@ public class PlatformIntegrationTest extends HeavyPlatformTestCase {
         assertEquals(1, service.unassigned.size());
     }
 
-    /** 补注册之前拒绝根外工作目录，不因缺少启动事件而扩大项目范围。 */
-    public void testLazyRegistrationRejectsOutsideWorkingDirectory() throws Exception {
+    /** 根外工作目录不附加项目上下文，也不阻止用户继续使用 Codex。 */
+    public void testOutsideWorkingDirectoryWarnsWithoutBlockingCodex() throws Exception {
         var output =
                 service.hook(
                         "terminal-new",
@@ -570,8 +570,67 @@ public class PlatformIntegrationTest extends HeavyPlatformTestCase {
                                 root.getParent().toString(),
                                 "prompt",
                                 "test"));
-        assertEquals("block", Json.parse(output.output()).get("decision").getAsString());
+        var response = Json.parse(output.output());
+        assertTrue(response.get("systemMessage").getAsString().contains("继续使用 Codex"));
+        assertFalse(response.has("decision"));
+        assertFalse(response.has("hookSpecificOutput"));
+        assertNull(output.batchId());
         assertTrue(service.sessions.list().isEmpty());
+    }
+
+    /** 已插入草稿的引用文件不可用时保留队列，不附加正文，也不阻断普通输入。 */
+    public void testUnavailableDraftReferenceWarnsAndRemainsQueued() throws Exception {
+        Path file = root.resolve("unavailable.txt");
+        Files.writeString(file, "disk");
+        var identity = service.pathPolicy().identify(file);
+        var key = new SessionStore.Key("terminal", "unavailable-session");
+        service.sessions.register(key.terminalId(), key.sessionId(), root.toString());
+        var item = Attachment.path(identity.getKey(), identity.getValue());
+        assertTrue(
+                service.sendDraftReferences(
+                        key, List.of(item), List.of("@unavailable.txt"), () -> true));
+        Files.delete(file);
+        var output =
+                service.hook(
+                        key.terminalId(),
+                        Json.object(
+                                "hook_event_name",
+                                "UserPromptSubmit",
+                                "session_id",
+                                key.sessionId(),
+                                "turn_id",
+                                "unavailable-turn",
+                                "cwd",
+                                root.toString(),
+                                "prompt",
+                                "hi @unavailable.txt"));
+        var response = Json.parse(output.output());
+        assertTrue(response.get("systemMessage").getAsString().contains("继续使用 Codex"));
+        assertFalse(response.has("decision"));
+        assertFalse(response.has("hookSpecificOutput"));
+        assertNull(output.batchId());
+        assertEquals(List.of(item), service.sessions.require(key).queued);
+        assertTrue(service.sessions.require(key).turns.isEmpty());
+        assertFalse(service.sessions.require(key).inTurn);
+        // 同一引用恢复可用后，只有草稿仍保留标记的下一次提交才正常交接。
+        Files.writeString(file, "restored");
+        var retry =
+                service.hook(
+                        key.terminalId(),
+                        Json.object(
+                                "hook_event_name",
+                                "UserPromptSubmit",
+                                "session_id",
+                                key.sessionId(),
+                                "turn_id",
+                                "restored-turn",
+                                "cwd",
+                                root.toString(),
+                                "prompt",
+                                "hi @unavailable.txt"));
+        assertTrue(Json.parse(retry.output()).has("hookSpecificOutput"));
+        assertNotNull(retry.batchId());
+        assertTrue(service.sessions.require(key).queued.isEmpty());
     }
 
     /** 外部磁盘修改保持未保存文档，并为两种真实基线分别生成只读记录。 */
